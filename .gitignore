@@ -1,0 +1,95 @@
+
+# ── Python / virtual environment ─────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+env/
+venv/
+ENV/
+VENV/
+.venv/
+.ipynb_checkpoints/
+# Jupyter notebooks
+*.ipynb
+
+# ── Data files ───────────────────────────────────────────────────────
+# Raw / large datasets (keep them out of the repo)
+data/
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.json
+*.h5
+*.hdf5
+*.parquet
+*.feather
+*.npz
+*.npy
+*.mat
+*.sav
+*.db
+*.sqlite
+
+# ── Model artifacts ───────────────────────────────────────────────────
+models/
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.pb
+*.onnx
+*.pkl
+*.joblib
+
+# ── Output / results ─────────────────────────────────────────────────
+outputs/
+results/
+reports/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.log
+*.out
+*.err
+
+# ── Cache / temporary files ───────────────────────────────────────────
+.cache/
+*.cache
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# ── Environment / configuration files ─────────────────────────────────
+.env
+*.env
+*.env.*
+.conda/
+.condarc
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── IDE / editor specific ─────────────────────────────────────────────
+# VS Code
+.vscode/
+# PyCharm
+.idea/
+*.iml
+# Spyder
+.spyproject/
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
