@@ -16,12 +16,9 @@ ENV/
 VENV/
 .venv/
 .ipynb_checkpoints/
-# Jupyter notebooks
-*.ipynb
 
 # ── Data files ───────────────────────────────────────────────────────
 # Raw / large datasets (keep them out of the repo)
-data/
 *.csv
 *.tsv
 *.xlsx

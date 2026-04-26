@@ -1,10 +1,12 @@
 # Unsupervised Learning Project
 
 Title: Booking complexity & behavior dynamics
-Core question: Can hotel bookings be segmented by complexity and reservation-management behavior (lead time, modifications, special requests, planning horizon)?
-Operational goal: Distinguish low-friction from high-touch bookings to optimize staff allocation and enable proactive service strategies.
 
-Dataset: 119,390 bookings × 32 features (data/hotel_bookings_course_release_v1.csv, ~16.8 MB, gitignored). A reproducible 30k-row subsample is specified in data/subsample_indices_v1_n30000_seed12345.txt.
+Core question: Can hotel bookings be segmented by complexity and reservation-management behavior (lead time, modifications, special requests, planning horizon)?
+
+Goal: Distinguish low-friction from high-touch bookings to optimize staff allocation and enable proactive service strategies.
+
+Dataset: 119,390 bookings × 32 features (data/hotel_bookings_course_release_v1.csv, ~16.8 MB). A reproducible 30k-row subsample is specified in data/subsample_indices_v1_n30000_seed12345.txt.
 
 
 ## Setup
