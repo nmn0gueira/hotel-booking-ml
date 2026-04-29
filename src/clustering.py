@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import time
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.cluster import KMeans
@@ -150,11 +151,28 @@ def ikmeans_initialize(
     init_centroids = np.stack([cl.centroid_std for cl in retained])
     return ap_clusters, init_centroids
 
-
-def run_kmeans(X: FloatArray, k: int, seed: int = 0):
-    model = KMeans(n_clusters=k, random_state=seed, n_init=10)
+def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
+   
+    model = KMeans(
+        n_clusters=K,
+        init=init_method,
+        n_init=1,           # one run per call — loop is controlled externally
+        random_state=seed,
+        max_iter=300,
+        algorithm="lloyd",
+    )
     labels = model.fit_predict(X)
-    return labels, model
+    centers = model.cluster_centers_
+    return model, labels, centers
+
+def run_kmeans(X, K, seed=0, init_method="k-means++"):
+    """Single K-Means run. Returns labels, model, and wall-clock runtime (s)."""
+    t0 = time.perf_counter()
+    model, labels, centers = fit_kmeans_once(X, K, init_method=init_method, seed=seed)
+    runtime = time.perf_counter() - t0
+    return labels, model, runtime
+
+
 
 
 def run_ikmeans(X: FloatArray, k: int):
