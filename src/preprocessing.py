@@ -87,7 +87,7 @@ def preprocess_data(df, feature_set="full", scaler="standard"):
 
     df = df.drop(columns=[c for c in EXCLUDED_COLUMNS if c in df.columns])
 
-    # Feature set (TODO: Perhaps allow for other feature sets or to just specify the features to use)
+    # Feature set
     features = FULL_FEATURE_SET.copy()
     if feature_set == "no_value_block":
         features = [f for f in features if f not in VALUE_BLOCK]
@@ -110,7 +110,7 @@ def preprocess_data(df, feature_set="full", scaler="standard"):
 
     # Categorical encoding (we only need OHE)
     if cat_cols:
-        ohe = OneHotEncoder()
+        ohe = OneHotEncoder(sparse_output=False)
         ohe_array = ohe.fit_transform(df[cat_cols])
         ohe_names = ohe.get_feature_names_out(cat_cols).tolist()
     else:
@@ -125,7 +125,6 @@ def preprocess_data(df, feature_set="full", scaler="standard"):
     else:
         raise ValueError(f"Unknown scaler: {scaler!r}. Expected 'standard' or 'robust'.")
     num_array = scaler_obj.fit_transform(df[num_cols].values.astype(np.float64))
-
     
     X = np.hstack([num_array, ohe_array])
     feature_names = num_cols + ohe_names
