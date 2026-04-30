@@ -11,12 +11,20 @@ DATA_PATH = "data/hotel_bookings_course_release_v1.csv"
 INDICES_PATH = "data/subsample_indices_v1_n30000_seed12345.txt"
 OUTPUT_PATH = "experiments.csv"
 
-K_VALUES = [3, 4, 5, 6]
-SEEDS = [0, 1, 2, 3, 4]
-#ALGORITHMS = ["kmeans", "ikmeans", "gmm"]
-ALGORITHMS = ["kmeans", "gmm"]
-FEATURE_SETS = ["full", "no_value_block"]
+K_VALUES = [2, 3, 4, 5, 6]
+SEEDS = [0, 1, 2, 3]
+ALGORITHMS = ["kmeans", "ikmeans", "gmm"]
+# full: main representation (booking-creation segmentation, with context + adr and other stuff)
+# no_value_block: drops adr, deposit_type, previous_*, is_repeated_guest
+# no_context: drops hotel_binary, arrival_month_sin/cos
+FEATURE_SETS = ["full", "no_value_block", "no_context"]
 SCALERS = ["standard", "robust"]
+
+
+def _total_runs() -> int:
+    # kmeans + gmm: 5 seeds each; ikmeans: 1 run (deterministic)
+    per_representation = (2 * len(SEEDS) + 1) * len(K_VALUES)
+    return len(FEATURE_SETS) * len(SCALERS) * per_representation
 
 
 def main():
@@ -26,17 +34,16 @@ def main():
     df = df.iloc[indices].reset_index(drop=True)
     print(f"Subsample shape: {df.shape}")
 
-    # Load completed runs to allow resuming after a crash
-    completed = set()
+    completed: set = set()
     if os.path.exists(OUTPUT_PATH):
         prior = pd.read_csv(OUTPUT_PATH)
         for _, row in prior.iterrows():
-            completed.add((row["model"], int(row["k"]), row["seed"], row["feature_set"], row["scaler"]))
+            completed.add(
+                (row["model"], int(row["k"]), row["seed"], row["feature_set"], row["scaler"])
+            )
         print(f"Resuming: {len(completed)} runs already completed.")
 
-    total = len(FEATURE_SETS) * len(SCALERS) * (
-        len(SEEDS) * 2 * len(K_VALUES) + 1 * len(K_VALUES)
-    )
+    total = _total_runs()
     done = len(completed)
 
     for feature_set in FEATURE_SETS:
@@ -51,7 +58,7 @@ def main():
                         key = (algorithm, k, seed, feature_set, scaler)
                         if key in completed:
                             continue
-                        labels, _ = fit_predict(X, k, seed, algorithm)
+                        labels, runtime = fit_predict(X, k, seed, algorithm)
                         metrics = evaluate_clustering(X, labels)
                         log_experiment(
                             {
@@ -61,6 +68,7 @@ def main():
                                 "feature_set": feature_set,
                                 "scaler": scaler,
                                 **metrics,
+                                "runtime" : runtime
                             },
                             filepath=OUTPUT_PATH,
                         )
@@ -69,9 +77,10 @@ def main():
                             f"  [{done}/{total}] {algorithm} k={k} seed={seed}"
                             f"  sil={metrics['silhouette']:.4f}"
                             f"  db={metrics['davies_bouldin']:.4f}"
+                            f"  runtime={runtime:.4f}"
                         )
 
-    print(f"\nDone. Results written to {OUTPUT_PATH}")
+    print(f"\nDone. {done} runs written to {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":

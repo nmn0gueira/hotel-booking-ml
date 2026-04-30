@@ -152,33 +152,40 @@ def ikmeans_initialize(
     return ap_clusters, init_centroids
 
 #Single k-means run (n_init=1)
-def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
-    
-    model = KMeans(
-        n_clusters=K,
-        init=init_method,
-        n_init=1,         
-        random_state=seed,
-        max_iter=300,
-        algorithm="lloyd",
-    )
-    labels = model.fit_predict(X)
-    centers = model.cluster_centers_
-    return model, labels, centers
+#def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
+#    
+#    model = KMeans(
+#        n_clusters=K,
+#        init=init_method,
+#        n_init=1,         
+#        random_state=seed,
+#        max_iter=300,
+#        algorithm="lloyd",
+#    )
+#    labels = model.fit_predict(X)
+#    centers = model.cluster_centers_
+#    return model, labels, centers
 
 #Single K-Means run. Returns labels, model, and wall-clock runtime (s).
-def run_kmeans(X, K, seed=0, init_method="k-means++"):
- 
+#def run_kmeans(X, K, seed=0, init_method="k-means++"): 
+#    t0 = time.perf_counter()
+#    model, labels, centers = fit_kmeans_once(X, K, init_method=init_method, seed=seed)
+#    runtime = time.perf_counter() - t0
+#    return labels, model, runtime
+
+def run_kmeans(X: FloatArray, k: int, seed: int = 0):
     t0 = time.perf_counter()
-    model, labels, centers = fit_kmeans_once(X, K, init_method=init_method, seed=seed)
+    model = KMeans(n_clusters=k, random_state=seed, n_init=10)
+    labels = model.fit_predict(X)
     runtime = time.perf_counter() - t0
-    return labels, model, runtime
+    return labels, runtime
 
 def run_ikmeans(X: FloatArray, k: int):
     """
     iK-means: use AP extraction centroids (raw space) to initialise k-means.
     Takes the first k clusters in extraction order.
     """
+    t0 = time.perf_counter()
     ap_clusters, _ = ikmeans_initialize(X, min_cluster_size=1)
     if len(ap_clusters) < k:
         raise ValueError(
@@ -188,18 +195,21 @@ def run_ikmeans(X: FloatArray, k: int):
     init_raw = np.stack([cl.centroid_raw for cl in ap_clusters[:k]]).astype(np.float64)
     model = KMeans(n_clusters=k, init=init_raw, n_init=1, random_state=0)
     labels = model.fit_predict(X)
-    return labels, model
+    runtime = time.perf_counter() - t0
+    return labels, runtime
 
 
 def run_gmm(X: FloatArray, k: int, seed: int = 0):
+    t0 = time.perf_counter()
     model = GaussianMixture(
         n_components=k, covariance_type="full", random_state=seed
     )
     model.fit(X)
     labels = model.predict(X)
-    return labels, model
+    runtime = time.perf_counter() - t0
+    return labels, runtime
 
-#Dispatch to the requested clustering algorithm.
+
 def fit_predict(X: FloatArray, k: int, seed: int, algorithm: str):
     if algorithm == "kmeans":
         return run_kmeans(X, k, seed)

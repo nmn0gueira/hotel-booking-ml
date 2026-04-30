@@ -4,35 +4,23 @@ from sklearn.metrics import (
     calinski_harabasz_score,
 )
 
-metric_info = {
-    "silhouette": {
-        "label": "Silhouette",
-        "func": silhouette_score,
-        "direction": "max",
-    },
-    "calinski_harabasz": {
-        "label": "Calinski–Harabasz",
-        "func": calinski_harabasz_score,
-        "direction": "max",
-    },
-    "davies_bouldin": {
-        "label": "Davies–Bouldin",
-        "func": davies_bouldin_score,
-        "direction": "min",
-    },
-}
 
-def evaluate_clustering(X, labels, runtime=None):
+def evaluate_clustering(X, labels):
+    """Return three internal clustering indices computed in the representation space of X.
 
-    result = {}
- 
+    silhouette: higher is better [-1, 1].
+    davies_bouldin: lower is better [0, inf).
+    calinski_harabasz: higher is better (0, inf).
+    Returns NaN for all indices when fewer than 2 clusters are present.
+    """
     if len(set(labels)) < 2:
-        for name in metric_info:
-            result[name] = float("nan")
-    else:
-        for name, info in metric_info.items():
-            result[name] = info["func"](X, labels)
- 
-    result["runtime_s"] = runtime  # None if not provided
- 
-    return result
+        return {
+            "silhouette": float("nan"),
+            "davies_bouldin": float("nan"),
+            "calinski_harabasz": float("nan"),
+        }
+    return {
+        "silhouette": silhouette_score(X, labels),
+        "davies_bouldin": davies_bouldin_score(X, labels),
+        "calinski_harabasz": calinski_harabasz_score(X, labels),
+    }
