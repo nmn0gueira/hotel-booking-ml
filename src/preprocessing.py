@@ -118,11 +118,7 @@ def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "
    
     df = df.copy()
 
-    dup_mask = df.T.duplicated()
-    dup_cols = df.columns[dup_mask].tolist()
-    if dup_cols:
-        print(f"[preprocess_data] Dropped {len(dup_cols)} exact duplicate column(s): {dup_cols}")
-        df = df.loc[:, ~dup_mask]
+    df = df.drop_duplicates()
 
     df = _derive_context_features(df)
     df = df.drop(columns=[c for c in EXCLUDED_COLUMNS if c in df.columns])

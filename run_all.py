@@ -77,6 +77,7 @@ def main():
                             f"  [{done}/{total}] {algorithm} k={k} seed={seed}"
                             f"  sil={metrics['silhouette']:.4f}"
                             f"  db={metrics['davies_bouldin']:.4f}"
+                            f"  ch={metrics['calinski_harabasz']:.4f}"
                             f"  runtime={runtime:.4f}"
                         )
 
