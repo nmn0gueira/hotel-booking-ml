@@ -151,12 +151,13 @@ def ikmeans_initialize(
     init_centroids = np.stack([cl.centroid_std for cl in retained])
     return ap_clusters, init_centroids
 
+#Single k-means run (n_init=1)
 def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
-   
+    
     model = KMeans(
         n_clusters=K,
         init=init_method,
-        n_init=1,           # one run per call — loop is controlled externally
+        n_init=1,         
         random_state=seed,
         max_iter=300,
         algorithm="lloyd",
@@ -165,15 +166,13 @@ def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
     centers = model.cluster_centers_
     return model, labels, centers
 
+#Single K-Means run. Returns labels, model, and wall-clock runtime (s).
 def run_kmeans(X, K, seed=0, init_method="k-means++"):
-    """Single K-Means run. Returns labels, model, and wall-clock runtime (s)."""
+ 
     t0 = time.perf_counter()
     model, labels, centers = fit_kmeans_once(X, K, init_method=init_method, seed=seed)
     runtime = time.perf_counter() - t0
     return labels, model, runtime
-
-
-
 
 def run_ikmeans(X: FloatArray, k: int):
     """
@@ -200,8 +199,8 @@ def run_gmm(X: FloatArray, k: int, seed: int = 0):
     labels = model.predict(X)
     return labels, model
 
-
-def fit_predict(X: FloatArray, k: int, seed: int | None, algorithm: str):
+#Dispatch to the requested clustering algorithm.
+def fit_predict(X: FloatArray, k: int, seed: int, algorithm: str):
     if algorithm == "kmeans":
         return run_kmeans(X, k, seed)
     elif algorithm == "ikmeans":
