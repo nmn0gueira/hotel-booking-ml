@@ -17,12 +17,12 @@ ALGORITHMS = ["kmeans", "ikmeans", "gmm"]
 # full: main representation (booking-creation segmentation, with context + adr and other stuff)
 # no_value_block: drops adr, deposit_type, previous_*, is_repeated_guest
 # no_context: drops hotel_binary, arrival_month_sin/cos
-FEATURE_SETS = ["full", "no_value_block", "no_context"]
+# complexity_only: drops VALUE_BLOCK + PROFILE_BLOCK; pure friction/workload features
+FEATURE_SETS = ["full", "no_value_block", "no_context", "complexity_only"]
 SCALERS = ["standard", "robust"]
 
 
 def _total_runs() -> int:
-    # kmeans + gmm: 5 seeds each; ikmeans: 1 run (deterministic)
     per_representation = (2 * len(SEEDS) + 1) * len(K_VALUES)
     return len(FEATURE_SETS) * len(SCALERS) * per_representation
 
