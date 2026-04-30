@@ -151,27 +151,6 @@ def ikmeans_initialize(
     init_centroids = np.stack([cl.centroid_std for cl in retained])
     return ap_clusters, init_centroids
 
-#Single k-means run (n_init=1)
-#def fit_kmeans_once(X, K, init_method="k-means++", seed=42):
-#    
-#    model = KMeans(
-#        n_clusters=K,
-#        init=init_method,
-#        n_init=1,         
-#        random_state=seed,
-#        max_iter=300,
-#        algorithm="lloyd",
-#    )
-#    labels = model.fit_predict(X)
-#    centers = model.cluster_centers_
-#    return model, labels, centers
-
-#Single K-Means run. Returns labels, model, and wall-clock runtime (s).
-#def run_kmeans(X, K, seed=0, init_method="k-means++"): 
-#    t0 = time.perf_counter()
-#    model, labels, centers = fit_kmeans_once(X, K, init_method=init_method, seed=seed)
-#    runtime = time.perf_counter() - t0
-#    return labels, model, runtime
 
 def run_kmeans(X: FloatArray, k: int, seed: int = 0):
     t0 = time.perf_counter()
