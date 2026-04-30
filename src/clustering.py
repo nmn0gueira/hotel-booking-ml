@@ -22,7 +22,6 @@ def compute_feature_statistics(
     X: FloatArray,
     use_unit_ranges: bool = False,
 ) -> tuple[FloatArray, FloatArray, float]:
-    """Returns (grand_mean, scales, total_scatter). Scales use range; zeros replaced by 1."""
     X = np.asarray(X, dtype=np.float64)
     mean = X.mean(axis=0)
     if use_unit_ranges:
@@ -32,7 +31,7 @@ def compute_feature_statistics(
         scales[scales == 0.0] = 1.0
     Y = (X - mean) / scales
     total_scatter = float(np.sum(Y ** 2))
-    return mean, scales, total_scatter
+    return mean, scales, total_scatter #Returns (grand_mean, scales, total_scatter). Scales use range; zeros replaced by 1.
 
 
 def normalized_squared_distances(
@@ -41,7 +40,6 @@ def normalized_squared_distances(
     scales: FloatArray,
     reference: FloatArray,
 ) -> FloatArray:
-    """δr(x_i, reference) for each i in indices."""
     rows = X[indices].astype(np.float64)
     diff = (rows - reference) / scales
     return np.sum(diff ** 2, axis=1)
@@ -58,7 +56,6 @@ def separate_cluster(
     a: FloatArray,
     b: FloatArray,
 ) -> list[int]:
-    """Return indices where δr(x_i, a) < δr(x_i, b). Strict inequality. Ties stay with b."""
     rows = X[indices].astype(np.float64)
     dist_a = np.sum(((rows - a) / scales) ** 2, axis=1)
     dist_b = np.sum(((rows - b) / scales) ** 2, axis=1)
@@ -75,8 +72,7 @@ def extract_anomalous_cluster(
     seed_index: int,
     tol: float = 1e-12,
     max_iter: int = 10_000,
-) -> tuple[list[int], FloatArray]:
-    """Alternating assign/update loop for one anomalous cluster."""
+) -> tuple[list[int], FloatArray]: #Alternating assign/update loop for one anomalous cluster.
     c = np.asarray(initial_centroid, dtype=np.float64).copy()
     S_prev: list[int] = []
 
@@ -101,16 +97,8 @@ def ikmeans_initialize(
     tol: float = 1e-12,
     max_iter: int = 10_000,
     use_unit_ranges: bool = False,
-) -> tuple[list[APCluster], FloatArray]:
-    """
-    Mirkin iK-means initialisation.
-
-    Extracts anomalous clusters one by one until all points are assigned,
-    then returns the standardised centroids of clusters with size >= min_cluster_size
-    as seeds for downstream k-means.
-
-    Raises ValueError if no cluster satisfies the size threshold.
-    """
+) -> tuple[list[APCluster], FloatArray]: # Mirkin iK-means initialisation.
+  
     X = np.asarray(X, dtype=np.float64)
     mean, scales, D = compute_feature_statistics(X, use_unit_ranges)
 
@@ -142,9 +130,9 @@ def ikmeans_initialize(
         remains = [i for i in remains if i not in S_set]
 
     retained = [cl for cl in ap_clusters if cl.size >= min_cluster_size]
-    if not retained:
+    if not retained: #    Raises ValueError if no cluster satisfies the size threshold.
         raise ValueError(
-            f"No anomalous cluster has size >= {min_cluster_size}. "
+            f"No anomalous cluster has size >= {min_cluster_size}. " 
             f"Cluster sizes found: {[cl.size for cl in ap_clusters]}"
         )
 
@@ -159,11 +147,8 @@ def run_kmeans(X: FloatArray, k: int, seed: int = 0):
     runtime = time.perf_counter() - t0
     return labels, runtime
 
+
 def run_ikmeans(X: FloatArray, k: int):
-    """
-    iK-means: use AP extraction centroids (raw space) to initialise k-means.
-    Takes the first k clusters in extraction order.
-    """
     t0 = time.perf_counter()
     ap_clusters, _ = ikmeans_initialize(X, min_cluster_size=1)
     if len(ap_clusters) < k:

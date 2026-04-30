@@ -4,15 +4,9 @@ from sklearn.metrics import (
     calinski_harabasz_score,
 )
 
-
+#Return three internal clustering indices computed in the representation space of X. (silhouette,davies_bouldin, calinski_harabasz). Returns NaN for all indices when fewer than 2 clusters are present.
 def evaluate_clustering(X, labels):
-    """Return three internal clustering indices computed in the representation space of X.
-
-    silhouette: higher is better [-1, 1].
-    davies_bouldin: lower is better [0, inf).
-    calinski_harabasz: higher is better (0, inf).
-    Returns NaN for all indices when fewer than 2 clusters are present.
-    """
+   
     if len(set(labels)) < 2:
         return {
             "silhouette": float("nan"),

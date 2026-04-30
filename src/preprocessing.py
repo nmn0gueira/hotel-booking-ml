@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler, OneHotEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
  
-#TODO TALVEZ METER A JUSTIFICAÇÃO APENAS NO RELATORIO E ABREVIAR OS COMENTARIS 
 # Columns excluded before any feature selection.
 # Leakage: post-event outcomes (is_canceled, reservation_status*).
 # Segmentation-time: booking_changes and days_in_waiting_list accumulate
@@ -127,9 +126,8 @@ def _derive_context_features(df: pd.DataFrame) -> pd.DataFrame:
         df["arrival_month_cos"] = np.cos(2 * np.pi * month_num / 12)
     return df
  
- 
+# Replace categories whose frequency is below threshold with 'Other'
 def _group_rare_categories(df: pd.DataFrame, cols: list, threshold: float) -> pd.DataFrame:
-    """Replace categories whose frequency is below threshold with 'Other'."""
     df = df.copy()
     for col in cols:
         if col not in df.columns:
@@ -182,8 +180,7 @@ def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "
     df = _group_rare_categories(df, cat_cols, RARE_THRESHOLD)
 
     if cat_cols:
-        # drop="if_binary" removes one redundant column for binary variables,
-        ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop="if_binary")
+        ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop="if_binary")         # drop="if_binary" removes one redundant column for binary variables,
         ohe_array = ohe.fit_transform(df[cat_cols])
         ohe_names = ohe.get_feature_names_out(cat_cols).tolist()
     else:
