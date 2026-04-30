@@ -30,7 +30,15 @@ VALUE_BLOCK = [
     "previous_cancellations", "previous_bookings_not_canceled",
     "is_repeated_guest",
 ]
- 
+
+# PROFILE_BLOCK: booking-type categorization features.
+# Describe channel/segment/product choice rather than booking complexity.
+# Removed in "complexity_only" representation; reserved for post-hoc profiling.
+PROFILE_BLOCK = [
+    "market_segment", "distribution_channel", "customer_type",
+    "reserved_room_type", "meal",
+]
+
 # Derived seasonal and property features, known at booking creation.
 CONTEXT_BLOCK = ["arrival_month_sin", "arrival_month_cos", "hotel_binary"]
  
@@ -47,7 +55,7 @@ FULL_FEATURE_SET = [
  
 CATEGORICAL_FEATURES = [
     "market_segment", "distribution_channel", "customer_type",
-    "deposit_type", "meal", "reserved_room_type",
+    "deposit_type", "meal", "reserved_room_type", "hotel_binary"
 ]
  
 NUMERICAL_FEATURES = [
@@ -55,8 +63,12 @@ NUMERICAL_FEATURES = [
     "adults", "children", "babies",
     "previous_cancellations", "previous_bookings_not_canceled",
     "adr", "total_of_special_requests",
-    "required_car_parking_spaces", "is_repeated_guest",
-    "arrival_month_sin", "arrival_month_cos", "hotel_binary",
+    "required_car_parking_spaces", "is_repeated_guest"
+    
+]
+
+CYCLIC_FEATURES = [
+    "arrival_month_sin", "arrival_month_cos"
 ]
  
 _MONTH_MAP = {
@@ -67,8 +79,22 @@ _MONTH_MAP = {
 
 WINSOR_CONFIG = {
     "lead_time": 0.99,
-    "adr":       0.99,
+    "children":       0.99,
+    "required_car_parking_spaces": 0.99,
+    "adults":       0.99,
+    "total_of_special_requests": 0.99,
+    "babies":       0.99
 }
+
+# log(1+x) applied after winsorization to reduce right-skew before scaling.
+LOG_TRANSFORM_COLS = [
+    "lead_time",
+    #"children",
+    #"required_car_parking_spaces",
+    #"adults",
+    #"total_of_special_requests",
+    #"babies"
+]
 
  
 RARE_THRESHOLD = 0.01
@@ -114,7 +140,7 @@ def _group_rare_categories(df: pd.DataFrame, cols: list, threshold: float) -> pd
     return df
  
 
-def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "standard", winsor: bool = True):
+def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "standard"):
    
     df = df.copy()
 
@@ -128,10 +154,12 @@ def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "
         features = [f for f in features if f not in VALUE_BLOCK]
     elif feature_set == "no_context":
         features = [f for f in features if f not in CONTEXT_BLOCK]
+    elif feature_set == "complexity_only":
+        features = [f for f in features if f not in VALUE_BLOCK and f not in PROFILE_BLOCK]
     elif feature_set != "full":
         raise ValueError(
             f"Unknown feature_set: {feature_set!r}. "
-            "Expected 'full', 'no_value_block', or 'no_context'."
+            "Expected 'full', 'no_value_block', 'no_context', or 'complexity_only'."
         )
 
     df = df[[f for f in features if f in df.columns]]
@@ -140,19 +168,22 @@ def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "
         df["children"] = df["children"].fillna(0.0)
     num_cols = [c for c in NUMERICAL_FEATURES if c in df.columns]
  
-    if winsor:
+    if scaler != "robust":  # robust scaler already handles outliers
         for col in WINSOR_CONFIG:
             if col in df.columns:
                 bound = float(np.quantile(df[col].values, WINSOR_CONFIG[col]))
                 df[col] = df[col].clip(upper=bound)
- 
+
+        for col in LOG_TRANSFORM_COLS:
+            if col in df.columns:
+                df[col] = np.log1p(df[col])
+
     cat_cols = [c for c in CATEGORICAL_FEATURES if c in df.columns]
     df = _group_rare_categories(df, cat_cols, RARE_THRESHOLD)
 
     if cat_cols:
         # drop="if_binary" removes one redundant column for binary variables,
-        # avoiding double-counting in Euclidean distance.
-        ohe       = OneHotEncoder(sparse_output=False, drop="if_binary")
+        ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop="if_binary")
         ohe_array = ohe.fit_transform(df[cat_cols])
         ohe_names = ohe.get_feature_names_out(cat_cols).tolist()
     else:
