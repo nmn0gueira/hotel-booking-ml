@@ -54,16 +54,16 @@ FULL_FEATURE_SET = [
  
 CATEGORICAL_FEATURES = [
     "market_segment", "distribution_channel", "customer_type",
-    "deposit_type", "meal", "reserved_room_type", "hotel_binary"
+    "deposit_type", "meal", "reserved_room_type",
 ]
- 
+
 NUMERICAL_FEATURES = [
     "lead_time",
     "adults", "children", "babies",
     "previous_cancellations", "previous_bookings_not_canceled",
     "adr", "total_of_special_requests",
-    "required_car_parking_spaces", "is_repeated_guest"
-    
+    "required_car_parking_spaces", "is_repeated_guest",
+    "hotel_binary",
 ]
 
 CYCLIC_FEATURES = [
@@ -199,7 +199,11 @@ def preprocess_data(df: pd.DataFrame, feature_set: str = "full", scaler: str = "
         raise ValueError(f"Unknown scaler: {scaler!r}. Expected 'standard' or 'robust'.")
     num_array = scaler_obj.fit_transform(df[num_cols].values.astype(np.float64))
  
-    X = np.hstack([num_array, ohe_array])
-    feature_names = num_cols + ohe_names
-    
+    # Cyclic features are pre-normalised to [-1, 1] by sin/cos encoding; skip scaler.
+    cyclic_cols = [c for c in CYCLIC_FEATURES if c in df.columns]
+    cyclic_array = df[cyclic_cols].values.astype(np.float64) if cyclic_cols else np.empty((len(df), 0))
+
+    X = np.hstack([num_array, ohe_array, cyclic_array])
+    feature_names = num_cols + ohe_names + cyclic_cols
+
     return X, feature_names

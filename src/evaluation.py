@@ -2,9 +2,16 @@ from sklearn.metrics import (
     silhouette_score,
     davies_bouldin_score,
     calinski_harabasz_score,
+    adjusted_rand_score,
 )
 
-#Return three internal clustering indices computed in the representation space of X. (silhouette,davies_bouldin, calinski_harabasz). Returns NaN for all indices when fewer than 2 clusters are present.
+def compute_ari(labels_a, labels_b) -> float:
+    """ARI between two label vectors. Returns NaN if either has <2 clusters."""
+    if len(set(labels_a)) < 2 or len(set(labels_b)) < 2:
+        return float("nan")
+    return float(adjusted_rand_score(labels_a, labels_b))
+
+
 def evaluate_clustering(X, labels):
    
     if len(set(labels)) < 2:

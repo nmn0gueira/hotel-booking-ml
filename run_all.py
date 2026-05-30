@@ -1,18 +1,20 @@
 import os
+import uuid
+from datetime import date as _date
 
 import pandas as pd
 
 from src.preprocessing import preprocess_data
 from src.clustering import fit_predict
 from src.evaluation import evaluate_clustering
-from src.utils import load_subsample_indices, log_experiment
+from src.utils import load_subsample_indices, log_experiment, save_labels, representation_id
 
 DATA_PATH = "data/hotel_bookings_course_release_v1.csv"
 INDICES_PATH = "data/subsample_indices_v1_n30000_seed12345.txt"
 OUTPUT_PATH = "experiments.csv"
 
-K_VALUES = [2, 3, 4, 5, 6]
-SEEDS = [0, 1, 2, 3]
+K_VALUES = [2, 3, 4, 5, 6, 7, 8]
+SEEDS = list(range(10))
 ALGORITHMS = ["kmeans", "ikmeans", "gmm"]
 # full: main representation (booking-creation segmentation, with context + adr and other stuff)
 # no_value_block: drops adr, deposit_type, previous_*, is_repeated_guest
@@ -23,8 +25,10 @@ SCALERS = ["standard", "robust"]
 
 
 def _total_runs() -> int:
-    per_representation = (2 * len(SEEDS) + 1) * len(K_VALUES)
-    return len(FEATURE_SETS) * len(SCALERS) * per_representation
+    kmeans_gmm_runs = 2 * len(SEEDS) * len(K_VALUES)   # kmeans + gmm, 10 seeds each
+    ikmeans_runs = len(K_VALUES)                        # deterministic, 1 run per K
+    per_pair = kmeans_gmm_runs + ikmeans_runs
+    return len(FEATURE_SETS) * len(SCALERS) * per_pair
 
 
 def main():
@@ -60,18 +64,24 @@ def main():
                             continue
                         labels, runtime = fit_predict(X, k, seed, algorithm)
                         metrics = evaluate_clustering(X, labels)
+                        run_id = str(uuid.uuid4())[:8]
+                        rep_id = representation_id(feature_set, scaler)
                         log_experiment(
                             {
+                                "run_id": run_id,
+                                "date": _date.today().isoformat(),
                                 "model": algorithm,
                                 "k": k,
                                 "seed": seed,
                                 "feature_set": feature_set,
                                 "scaler": scaler,
+                                "representation_id": rep_id,
                                 **metrics,
-                                "runtime" : runtime
+                                "runtime": runtime,
                             },
                             filepath=OUTPUT_PATH,
                         )
+                        save_labels(labels, algorithm, k, seed, feature_set, scaler)
                         done += 1
                         print(
                             f"  [{done}/{total}] {algorithm} k={k} seed={seed}"
