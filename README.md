@@ -45,3 +45,21 @@ conda create -n hotel-booking-ml python=3.14 -y
 conda activate hotel-booking-ml
 pip install -r requirements.txt
 ```
+
+## Running experiments
+
+Run all clustering experiments (1176 runs: 4 feature sets × 2 scalers × {k-means, GMM} × 10 seeds + iK-means × K∈{2..8}). Resumes automatically if interrupted.
+
+```
+python run_all.py
+```
+
+Results are appended to `experiments.csv`. Cluster label arrays are saved to `labels/`.
+
+Once experiments are complete, generate all figures and tables:
+
+```
+python analyze.py
+```
+
+Outputs are written to `figures/` and `tables/`.
