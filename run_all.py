@@ -42,8 +42,9 @@ def main():
     if os.path.exists(OUTPUT_PATH):
         prior = pd.read_csv(OUTPUT_PATH)
         for _, row in prior.iterrows():
+            seed_val = None if pd.isna(row["seed"]) else row["seed"]
             completed.add(
-                (row["model"], int(row["k"]), row["seed"], row["feature_set"], row["scaler"])
+                (row["model"], int(row["k"]), seed_val, row["feature_set"], row["scaler"])
             )
         print(f"Resuming: {len(completed)} runs already completed.")
 
@@ -62,7 +63,12 @@ def main():
                         key = (algorithm, k, seed, feature_set, scaler)
                         if key in completed:
                             continue
-                        labels, runtime = fit_predict(X, k, seed, algorithm)
+                        try:
+                            labels, runtime = fit_predict(X, k, seed, algorithm)
+                        except ValueError as exc:
+                            print(f"  SKIP {algorithm} k={k} seed={seed}: {exc}")
+                            done += 1
+                            continue
                         metrics = evaluate_clustering(X, labels)
                         run_id = str(uuid.uuid4())[:8]
                         rep_id = representation_id(feature_set, scaler)
