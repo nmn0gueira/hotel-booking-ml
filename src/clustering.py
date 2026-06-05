@@ -34,12 +34,7 @@ def compute_feature_statistics(
     return mean, scales, total_scatter #Returns (grand_mean, scales, total_scatter). Scales use range; zeros replaced by 1.
 
 
-def normalized_squared_distances(
-    X: FloatArray,
-    indices: list[int],
-    scales: FloatArray,
-    reference: FloatArray,
-) -> FloatArray:
+def normalized_squared_distances( X: FloatArray, indices: list[int], scales: FloatArray, reference: FloatArray, ) -> FloatArray:
     rows = X[indices].astype(np.float64)
     diff = (rows - reference) / scales
     return np.sum(diff ** 2, axis=1)
@@ -49,13 +44,8 @@ def cluster_centroid(X: FloatArray, indices: list[int]) -> FloatArray:
     return X[indices].astype(np.float64).mean(axis=0)
 
 
-def separate_cluster(
-    X: FloatArray,
-    indices: list[int],
-    scales: FloatArray,
-    a: FloatArray,
-    b: FloatArray,
-) -> list[int]:
+def separate_cluster( X: FloatArray, indices: list[int], scales: FloatArray, a: FloatArray, b: FloatArray, ) -> list[int]:
+    
     rows = X[indices].astype(np.float64)
     dist_a = np.sum(((rows - a) / scales) ** 2, axis=1)
     dist_b = np.sum(((rows - b) / scales) ** 2, axis=1)
@@ -63,16 +53,8 @@ def separate_cluster(
     return sorted(np.array(indices)[mask].tolist()) # "Cluster indices must always refer to row numbers of the original matrix X. For deterministic behaviour, return them in increasing order."
 
 
-def extract_anomalous_cluster(
-    X: FloatArray,
-    indices: list[int],
-    scales: FloatArray,
-    mean: FloatArray,
-    initial_centroid: FloatArray,
-    seed_index: int,
-    tol: float = 1e-12,
-    max_iter: int = 10_000,
-) -> tuple[list[int], FloatArray]: #Alternating assign/update loop for one anomalous cluster.
+def extract_anomalous_cluster( X: FloatArray, indices: list[int], scales: FloatArray, mean: FloatArray, initial_centroid: FloatArray, seed_index: int, tol: float = 1e-12, max_iter: int = 10_000,) -> tuple[list[int], FloatArray]: #Alternating assign/update loop for one anomalous cluster.
+    
     c = np.asarray(initial_centroid, dtype=np.float64).copy()
     S_prev: list[int] = []
 
@@ -91,13 +73,7 @@ def extract_anomalous_cluster(
     return S, c
 
 
-def ikmeans_initialize(
-    X: FloatArray,
-    min_cluster_size: int,
-    tol: float = 1e-12,
-    max_iter: int = 10_000,
-    use_unit_ranges: bool = False,
-) -> tuple[list[APCluster], FloatArray]: # Mirkin iK-means initialisation.
+def ikmeans_initialize( X: FloatArray, min_cluster_size: int, tol: float = 1e-12, max_iter: int = 10_000, use_unit_ranges: bool = False, ) -> tuple[list[APCluster], FloatArray]: # Mirkin iK-means initialisation.
   
     X = np.asarray(X, dtype=np.float64)
     mean, scales, D = compute_feature_statistics(X, use_unit_ranges)

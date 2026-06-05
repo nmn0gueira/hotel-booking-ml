@@ -13,9 +13,9 @@ def load_subsample_indices(indices_path):
                 indices.append(int(line))
     return indices
 
-
+# Stable short ID for a (feature_set, scaler) pair, e.g. "NV-rob" for no_value_block+robust.
 def representation_id(feature_set: str, scaler: str) -> str:
-    """Stable short ID for a (feature_set, scaler) pair."""
+
     fs_code = {"full": "F", "no_value_block": "NV", "no_context": "NC", "complexity_only": "CO"}
     sc_code = {"standard": "std", "robust": "rob", "minmax": "mm", "mean": "mr"}
     return f"{fs_code.get(feature_set, feature_set)}-{sc_code.get(scaler, scaler)}"

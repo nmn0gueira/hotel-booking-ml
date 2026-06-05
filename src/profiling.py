@@ -8,17 +8,10 @@ POSTHOC_COLS = [
 ]
 
 
-def compute_cluster_profiles(
-    X: np.ndarray,
-    labels: np.ndarray,
-    feature_names: list[str],
-    raw_df: pd.DataFrame | None = None,
-) -> pd.DataFrame:
-    """
-    Returns a DataFrame with rows = clusters, columns = per-feature mean/std + size.
-    If raw_df is provided, post-hoc variables (adr, is_canceled, etc.) are appended
-    using the original unscaled values — these are profiling-only, not clustering inputs.
-    """
+# Returns a DataFrame with rows = clusters, columns = per-feature mean/std + size.
+# If raw_df is provided, post-hoc variables (adr, is_canceled, etc.) are appended using the original unscaled values — these are profiling-only, not clustering inputs.
+def compute_cluster_profiles(X: np.ndarray, labels: np.ndarray, feature_names: list[str], raw_df: pd.DataFrame | None = None,) -> pd.DataFrame:
+   
     df_X = pd.DataFrame(X, columns=feature_names)
     df_X["_cluster"] = labels
 

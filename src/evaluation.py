@@ -5,8 +5,9 @@ from sklearn.metrics import (
     adjusted_rand_score,
 )
 
+# Evaluation metrics for clustering and clustering stability.
 def compute_ari(labels_a, labels_b) -> float:
-    """ARI between two label vectors. Returns NaN if either has <2 clusters."""
+
     if len(set(labels_a)) < 2 or len(set(labels_b)) < 2:
         return float("nan")
     return float(adjusted_rand_score(labels_a, labels_b))

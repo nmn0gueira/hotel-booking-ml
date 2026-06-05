@@ -1,11 +1,3 @@
-"""
-Post-run analysis: reads experiments.csv + labels/, generates all figures and tables.
-Run AFTER run_all.py completes.
-
-Usage:
-    python analyze.py
-    python analyze.py --main-k 4   # override the selected K for profiles
-"""
 import argparse
 import os
 from itertools import combinations
@@ -41,12 +33,16 @@ FEATURE_SETS = ["full", "no_value_block", "no_context", "complexity_only"]
 SCALERS = ["standard", "robust"]
 
 
+
+
 def _load_data() -> pd.DataFrame:
     df = pd.read_csv(DATA_PATH)
     indices = load_subsample_indices(INDICES_PATH)
     return df.iloc[indices].reset_index(drop=True)
 
 
+
+#    Stability across seeds: mean ± std of internal indices, pairwise ARI across seeds.
 def generate_stability_metrics(exp: pd.DataFrame) -> None:
     """Mean ± std of internal indices across seeds per (model, k, feature_set, scaler)."""
     stochastic = exp[exp["model"].isin(["kmeans", "gmm"])]
@@ -64,8 +60,10 @@ def generate_stability_metrics(exp: pd.DataFrame) -> None:
     print(f"  {out}")
 
 
+
+#   Pairwise ARI across seeds for kmeans and gmm per (k, feature_set, scaler).
 def generate_seed_ari() -> None:
-    """Pairwise ARI across seeds for kmeans and gmm per (k, feature_set, scaler)."""
+
     rows = []
     for fs in FEATURE_SETS:
         for sc in SCALERS:
@@ -94,8 +92,10 @@ def generate_seed_ari() -> None:
     print(f"  {out}")
 
 
+
+#  Controlled comparison: ARI between main representation (R0: no_value_block+robust, seed=0) and others.
 def generate_controlled_comparison_ari() -> None:
-    """ARI between main representation (R0: no_value_block+robust, seed=0) and others."""
+
     rows = []
     for k in K_VALUES:
         try:
@@ -118,8 +118,10 @@ def generate_controlled_comparison_ari() -> None:
     print(f"  {out}")
 
 
+
+#    Cluster profiles for main representation at selected K.
 def generate_profiles(raw_df: pd.DataFrame, main_k: int) -> None:
-    """Cluster profiles for main representation at selected K."""
+
     X, feature_names = preprocess_data(raw_df, feature_set=MAIN_FS, scaler=MAIN_SCALER)
     labels = load_labels("kmeans", main_k, 0, MAIN_FS, MAIN_SCALER, LABELS_DIR)
     profile = compute_cluster_profiles(X, labels, feature_names, raw_df=raw_df)
@@ -128,8 +130,9 @@ def generate_profiles(raw_df: pd.DataFrame, main_k: int) -> None:
     print(f"  {out}")
 
 
+
+# AIC/BIC curve for GMM on main representation (family-specific diagnostic).
 def generate_gmm_aic_bic(raw_df: pd.DataFrame) -> None:
-    """AIC/BIC curve for GMM on main representation (family-specific diagnostic)."""
     X, _ = preprocess_data(raw_df, feature_set=MAIN_FS, scaler=MAIN_SCALER)
     aic_vals, bic_vals = [], []
     for k in K_VALUES:
@@ -151,7 +154,9 @@ def generate_gmm_aic_bic(raw_df: pd.DataFrame) -> None:
     plt.close(fig)
     print(f"  {out}")
 
-#    Rule-based classification: data-quality anomaly vs rare-but-plausible booking.
+
+
+#  Rule-based classification: data-quality anomaly vs rare-but-plausible booking.
 def _classify_anomaly_type(row: pd.Series) -> str:
    
     # No guests at all — impossible booking
@@ -177,6 +182,7 @@ def _classify_anomaly_type(row: pd.Series) -> str:
         return "data_quality"
 
     return "rare_plausible"
+
 
 #    Build a justification string for why this booking is unusual.
 def _build_reason(row: pd.Series, cluster_means: dict) -> str:
@@ -225,17 +231,11 @@ def _build_reason(row: pd.Series, cluster_means: dict) -> str:
     parts = flags + top_devs
     return "; ".join(parts) if parts else "no dominant deviation identified"
 
+
+
 #    Extension E1: top-20 anomalies
 def generate_anomaly_analysis(raw_df: pd.DataFrame, main_k: int) -> None:
-    """
-    Covers:
-      - k-means normalised centroid distance (primary score)
-      - GMM negative log-likelihood (secondary score) + overlap comparison
-      - anomaly_type column: data_quality vs rare_plausible
-      - reason column: top deviant fields vs cluster mean
-      - Sensitivity: robust vs standard scaling (Spearman rank correlation)
-      - Stability: top-20 overlap across seeds 0/1/2
-    """
+    
     X_rob, _ = preprocess_data(raw_df, feature_set=MAIN_FS, scaler=MAIN_SCALER)
     labels_rob = load_labels("kmeans", main_k, 0, MAIN_FS, MAIN_SCALER, LABELS_DIR)
     centroids_rob = np.array([
@@ -345,7 +345,7 @@ def generate_anomaly_analysis(raw_df: pd.DataFrame, main_k: int) -> None:
     plt.close(fig)
     print(f"  {out_fig_kg}")
 
-    # ── Figure: anomaly_type breakdown bar chart ──────────────────────────────
+    # Figure: anomaly_type breakdown bar chart
     type_counts = top_df["anomaly_type"].value_counts()
     fig2, ax2 = plt.subplots(figsize=(5, 3))
     bars = ax2.bar(type_counts.index, type_counts.values,
@@ -364,7 +364,7 @@ def generate_anomaly_analysis(raw_df: pd.DataFrame, main_k: int) -> None:
     plt.close(fig2)
     print(f"  {out_fig_type}")
 
-    # ── Sensitivity: robust vs standard scaling rank correlation ─────────────
+    # Sensitivity: robust vs standard scaling rank correlation
     X_std, _ = preprocess_data(raw_df, feature_set=MAIN_FS, scaler="standard")
     labels_std = load_labels("kmeans", main_k, 0, MAIN_FS, "standard", LABELS_DIR)
     centroids_std = np.array([
@@ -456,13 +456,13 @@ def generate_ikmeans_bootstrap_stability(raw_df: pd.DataFrame, main_k: int, n_bo
               f"ch={metrics['calinski_harabasz']:.4f}  "
               f"runtime={runtime:.2f}s")
 
-    # ── Save per-run metrics table ────────────────────────────────────────────
+    # Save per-run metrics table
     metrics_df = pd.DataFrame(metric_rows)
     out_metrics = f"{TABLES_DIR}/ikmeans_bootstrap_stability.csv"
     metrics_df.to_csv(out_metrics, index=False)
     print(f"  {out_metrics}")
 
-    # ── Pairwise ARI on shared indices ────────────────────────────────────────
+    # Pairwise ARI on shared indices
     ari_rows = []
     n_runs = len(run_indices)
     for i, j in combinations(range(n_runs), 2):
@@ -495,7 +495,7 @@ def generate_ikmeans_bootstrap_stability(raw_df: pd.DataFrame, main_k: int, n_bo
           f"mean={np.mean(valid_aris):.4f}  std={np.std(valid_aris):.4f}  "
           f"min={np.min(valid_aris):.4f}  max={np.max(valid_aris):.4f}")
 
-    # ── Figure: box-plots of internal indices across bootstrap runs ───────────
+    # Figure: box-plots of internal indices across bootstrap runs
     if len(metrics_df) < 2:
         print("  WARNING: fewer than 2 successful runs — skipping figure.")
         return
@@ -537,7 +537,7 @@ def generate_ikmeans_bootstrap_stability(raw_df: pd.DataFrame, main_k: int, n_bo
     plt.close(fig)
     print(f"  {out_fig}")
 
-    # ── Figure: ARI distribution across pairs ────────────────────────────────
+    #Figure: ARI distribution across pairs
     fig2, ax2 = plt.subplots(figsize=(6, 4))
     ax2.hist(valid_aris, bins=min(10, len(valid_aris)),
              color="steelblue", edgecolor="white", linewidth=0.6)
@@ -567,11 +567,9 @@ def main(main_k: int = 4) -> None:
     os.makedirs(FIGURES_DIR, exist_ok=True)
     os.makedirs(TABLES_DIR, exist_ok=True)
 
-    print("Loading data...")
     raw_df = _load_data()
     exp = pd.read_csv(EXPERIMENTS_PATH)
 
-    print("Generating stability tables...")
     generate_stability_metrics(exp)
     generate_seed_ari()
     generate_controlled_comparison_ari()
@@ -579,13 +577,10 @@ def main(main_k: int = 4) -> None:
     print(f"Generating cluster profiles (K={main_k})...")
     generate_profiles(raw_df, main_k)
 
-    print("Generating GMM AIC/BIC figure...")
     generate_gmm_aic_bic(raw_df)
 
-    print("Generating anomaly analysis (E1)...")
     generate_anomaly_analysis(raw_df, main_k)
 
-    print("Generating iK-means bootstrap stability (Task 3.3)...")
     generate_ikmeans_bootstrap_stability(raw_df, main_k)
 
     print(f"\nDone. Check {FIGURES_DIR}/ and {TABLES_DIR}/")

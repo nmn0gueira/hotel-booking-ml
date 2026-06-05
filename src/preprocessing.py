@@ -18,8 +18,6 @@ EXCLUDED_COLUMNS = [
     "booking_changes", "days_in_waiting_list", "country"
 ]
 
-# TODO: Add POSTHOC_COLUMNS variable?
-
  
 # VALUE_BLOCK: economic value / reliability variables.
 # Excluded from "no_value_block" representation and reserved for post-hoc

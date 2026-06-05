@@ -1,7 +1,3 @@
-"""
-Teste isolado de generate_ikmeans_bootstrap_stability.
-Usa dados sintéticos — não precisa do dataset real nem de labels/ gravados.
-"""
 import numpy as np
 import pandas as pd
 import os, sys
@@ -10,14 +6,14 @@ import os, sys
 os.makedirs("figures", exist_ok=True)
 os.makedirs("tables", exist_ok=True)
 
-# ── Patch das constantes que a função usa ────────────────────────────────────
+#Patch das constantes que a função usa
 import analyze
 analyze.MAIN_FS     = "no_value_block"
 analyze.MAIN_SCALER = "robust"
 analyze.FIGURES_DIR = "figures"
 analyze.TABLES_DIR  = "tables"
 
-# ── Substituir preprocess_data por uma versão mock ───────────────────────────
+#  Substituir preprocess_data por uma versão mock 
 # Em vez de carregar o CSV real, devolve uma matriz aleatória com 500 pontos
 import src.preprocessing as _prep
 _original_preprocess = _prep.preprocess_data
@@ -35,10 +31,10 @@ def _mock_preprocess(df, feature_set="no_value_block", scaler="robust"):
 _prep.preprocess_data = _mock_preprocess
 analyze.preprocess_data = _mock_preprocess  # patch no namespace de analyze também
 
-# ── Raw df mock (só precisa de ter len >= n_pontos) ──────────────────────────
+# Raw df mock (só precisa de ter len >= n_pontos)
 raw_df_mock = pd.DataFrame(np.zeros((500, 2)), columns=["a", "b"])
 
-# ── Correr a função ───────────────────────────────────────────────────────────
+# Correr a função com os dados sintéticos
 print("A correr generate_ikmeans_bootstrap_stability com dados sintéticos...")
 analyze.generate_ikmeans_bootstrap_stability(
     raw_df=raw_df_mock,
@@ -48,8 +44,8 @@ analyze.generate_ikmeans_bootstrap_stability(
     seed=0,
 )
 
-# ── Verificar outputs ─────────────────────────────────────────────────────────
-print("\n=== Verificação dos outputs ===")
+#  Verificar outputs
+print("\n Verificação dos outputs")
 
 for path in [
     "tables/ikmeans_bootstrap_stability.csv",
@@ -61,7 +57,7 @@ for path in [
     size   = os.path.getsize(path) if exists else 0
     print(f"  {'OK' if exists and size > 0 else 'FAIL'}: {path} ({size} bytes)")
 
-# ── Verificar conteúdo das tabelas ────────────────────────────────────────────
+# Verificar conteúdo das tabelas 
 print()
 stab = pd.read_csv("tables/ikmeans_bootstrap_stability.csv")
 print("ikmeans_bootstrap_stability.csv:")
@@ -72,7 +68,7 @@ ari = pd.read_csv("tables/ikmeans_bootstrap_ari.csv")
 print("ikmeans_bootstrap_ari.csv:")
 print(ari.to_string())
 
-# ── Verificações lógicas ──────────────────────────────────────────────────────
+# Verificações lógicas
 print()
 assert len(stab) == 5, f"Esperava 5 runs, obteve {len(stab)}"
 assert "silhouette" in stab.columns, "Coluna silhouette em falta"
