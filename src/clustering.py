@@ -145,7 +145,7 @@ def run_kmeans(X: FloatArray, k: int, seed: int = 0):
     model = KMeans(n_clusters=k, random_state=seed, n_init=10)
     labels = model.fit_predict(X)
     runtime = time.perf_counter() - t0
-    return labels, runtime
+    return labels, runtime, int(model.n_iter_)
 
 
 def run_ikmeans(X: FloatArray, k: int):
@@ -160,7 +160,7 @@ def run_ikmeans(X: FloatArray, k: int):
     model = KMeans(n_clusters=k, init=init_raw, n_init=1, random_state=0)
     labels = model.fit_predict(X)
     runtime = time.perf_counter() - t0
-    return labels, runtime
+    return labels, runtime, int(model.n_iter_)
 
 
 def run_gmm(X: FloatArray, k: int, seed: int = 0):
@@ -171,10 +171,11 @@ def run_gmm(X: FloatArray, k: int, seed: int = 0):
     model.fit(X)
     labels = model.predict(X)
     runtime = time.perf_counter() - t0
-    return labels, runtime
+    return labels, runtime, int(model.n_iter_)
 
 
 def fit_predict(X: FloatArray, k: int, seed: int, algorithm: str):
+    
     if algorithm == "kmeans":
         return run_kmeans(X, k, seed)
     elif algorithm == "ikmeans":

@@ -1,3 +1,4 @@
+import argparse
 import os
 import uuid
 from datetime import date as _date
@@ -31,7 +32,20 @@ def _total_runs() -> int:
     return len(FEATURE_SETS) * len(SCALERS) * per_pair
 
 
-def main():
+def main(fast: bool = False):
+    # ── Fast-check mode overrides ─────────────────────────────────────────────
+    # Reduces the grid to a small but representative subset so the full
+    # pipeline (preprocessing → clustering → evaluation → logging → labels/)
+    # can be verified in ~2 minutes without running all 1176 combinations.
+    global K_VALUES, SEEDS, FEATURE_SETS, SCALERS
+    if fast:
+        K_VALUES     = [3, 4]
+        SEEDS        = [0, 1]
+        FEATURE_SETS = ["no_value_block"]
+        SCALERS      = ["robust"]
+        print("FAST-CHECK MODE: K=[3,4], seeds=[0,1], "
+              "feature_sets=[no_value_block], scalers=[robust]")
+
     print("Loading data...")
     df = pd.read_csv(DATA_PATH)
     indices = load_subsample_indices(INDICES_PATH)
@@ -64,7 +78,7 @@ def main():
                         if key in completed:
                             continue
                         try:
-                            labels, runtime = fit_predict(X, k, seed, algorithm)
+                            labels, runtime, n_iter = fit_predict(X, k, seed, algorithm)
                         except ValueError as exc:
                             print(f"  SKIP {algorithm} k={k} seed={seed}: {exc}")
                             done += 1
@@ -84,6 +98,9 @@ def main():
                                 "representation_id": rep_id,
                                 **metrics,
                                 "runtime": runtime,
+                                "diagnostics": n_iter,   # convergence iterations (model.n_iter_)
+                                "sample_rule": os.path.basename(INDICES_PATH),
+                                "notes": "",
                             },
                             filepath=OUTPUT_PATH,
                         )
@@ -101,4 +118,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Run full clustering experiment grid."
+    )
+    parser.add_argument(
+        "--fast", action="store_true",
+        help=(
+            "Fast-check mode: verifies end-to-end pipeline integrity without "
+            "running the full grid. Uses 2 seeds, K in [3, 4], 1 feature set "
+            "(no_value_block), and 1 scaler (robust). Completes in ~2 minutes."
+        ),
+    )
+    args = parser.parse_args()
+    main(fast=args.fast)
